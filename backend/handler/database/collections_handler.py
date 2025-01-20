@@ -49,7 +49,7 @@ class DBCollectionsHandler(DBBaseHandler):
         session: Session = None,
     ) -> list[Collection]:
         query = select(Collection).filter(
-            json_array_contains_value(Collection.roms, rom_id, session=session)
+            json_array_contains_value(Collection.roms, str(rom_id), session=session)
         )
         if order_by is not None:
             query = query.order_by(*order_by)
