@@ -1,6 +1,8 @@
 # Please see the full example under examples/docker-compose.example.yml
 
 services:
+  romm-dev:
+    build: './docker'
   romm-mariadb-dev:
     image: mariadb:11.3.2
     container_name: romm-mariadb-dev

@@ -1,0 +1,16 @@
+{
+	"name": "Romm",
+	"initializeCommand": "docker build -t romm-dev:latest -f docker/Dockerfile .",
+	"image": "romm-dev:latest",
+	"workspaceFolder": "/src/",
+	"dockerComposeFile": [
+		"../docker-compose.yml"
+	],
+	"service": "romm-dev",
+	"runServices": [
+		"romm-mariadb-dev",
+		"romm-valkey-dev",
+		"romm-authentik-server",
+		"romm-authentik-worker"
+	],
+}
