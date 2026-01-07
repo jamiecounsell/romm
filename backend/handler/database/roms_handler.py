@@ -33,6 +33,8 @@ from utils.database import (
     json_array_contains_all,
     json_array_contains_any,
     json_array_contains_value,
+    is_mysql,
+    is_mariadb
 )
 
 from .base_handler import DBBaseHandler
@@ -721,9 +723,19 @@ class DBRomsHandler(DBBaseHandler):
         # Ignore case when the order attribute is a number
         if isinstance(order_attr.type, (String, Text)):
             # Remove any leading articles
-            order_attr = func.trim(
-                func.lower(order_attr).regexp_replace(STRIP_ARTICLES_REGEX, "", "i")
-            )
+            lower_expr = func.lower(order_attr)
+
+            try: # to detect dialect from session.bind
+                bind = session.get_bind() if session is not None else None
+            except Exception:
+                bind = None
+
+            if bind is not None and (is_mysql(bind) or is_mariadb(bind)):
+                replaced = func.REGEXP_REPLACE(lower_expr, STRIP_ARTICLES_REGEX, "", 1, 0, "i")
+            else:
+                replaced = func.regexp_replace(lower_expr, STRIP_ARTICLES_REGEX, "", "i")
+
+            order_attr = func.trim(replaced)
 
         if order_dir.lower() == "desc":
             order_attr = order_attr.desc()
@@ -787,14 +799,21 @@ class DBRomsHandler(DBBaseHandler):
         session: Session = None,  # type: ignore
     ) -> list[Row[tuple[str, int]]]:
         if isinstance(order_by_attr.type, (String, Text)):
-            # Remove any leading articles
-            order_by_attr = func.trim(
-                func.lower(order_by_attr).regexp_replace(STRIP_ARTICLES_REGEX, "", "i")
-            )
+            lower_expr = func.lower(order_by_attr)
         else:
-            order_by_attr = func.trim(
-                func.lower(Rom.name).regexp_replace(STRIP_ARTICLES_REGEX, "", "i")
-            )
+            lower_expr = func.lower(Rom.name)
+
+        try: # to get a bind/connection if possible
+            bind = session.get_bind() if session is not None else None
+        except Exception:
+            bind = None
+
+        if bind is not None and (is_mysql(bind) or is_mariadb(bind)):
+            replaced = func.REGEXP_REPLACE(lower_expr, STRIP_ARTICLES_REGEX, "", 1, 0, "i")
+        else:
+            replaced = func.regexp_replace(lower_expr, STRIP_ARTICLES_REGEX, "", "i")
+
+        order_by_attr = func.trim(replaced)
 
         # Get the row number and first letter for each item
         subquery = (
